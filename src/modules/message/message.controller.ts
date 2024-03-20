@@ -23,12 +23,9 @@ export class MessageController {
   @ApiResponse({ type: ThreadResponseDto, isArray: true })
   @Get('thread')
   public getThreads(
-    @Query() filter: PaginationRequestDto,
+    @Query() pagination: PaginationRequestDto,
   ): Promise<ThreadResponseDto[]> {
-    return this.messageService.getThreads(
-      filter.offset || 0,
-      filter.limit || 10,
-    );
+    return this.messageService.getThreads(pagination);
   }
 
   @ApiResponse({ type: ThreadMessageResponseDto, isArray: true })
@@ -51,7 +48,7 @@ export class MessageController {
   }
 
   @ApiResponse({ type: IdMessageDto })
-  @UseGuards(git )
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   public saveMessage(
     @Body() data: SaveMessageRequestDto,

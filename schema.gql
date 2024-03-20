@@ -16,9 +16,8 @@ input PaginationRequestDto {
 }
 
 type Query {
-  thread(id: ID!): ThreadResponseDto!
   threadMessages(id: Float!, pagination: PaginationRequestDto): [ThreadMessageResponseDto!]!
-  threads(pagination: PaginationRequestDto): [ThreadResponseDto!]!
+  threads(pagination: PaginationRequestDto, sort: SortRequestDto): [ThreadResponseDto!]!
 }
 
 input SaveMessageRequestDto {
@@ -29,12 +28,17 @@ input SaveMessageRequestDto {
   text: String!
 }
 
+input SortRequestDto {
+  column: String
+  order: String
+}
+
 type ThreadMessageResponseDto {
   createdAt: String!
   email: String!
   files: [String!]!
-  homepage: String!
-  id: ID!
+  homepage: String
+  id: Float!
   name: String!
   parentId: Float!
   path: [Float!]!
@@ -46,8 +50,8 @@ type ThreadResponseDto {
   createdAt: String!
   email: String!
   files: [String!]!
-  homepage: String!
-  id: ID!
+  homepage: String
+  id: Float!
   name: String!
   text: String!
 }

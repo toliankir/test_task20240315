@@ -7,6 +7,8 @@ import { ThreadResponseDto } from './dto/thread.response.dto';
 import { IdMessageDto } from './dto/id.message.dto';
 import { ThreadMessageEntity } from '../../database/entity/thread-message.entity';
 import { ThreadMessageResponseDto } from './dto/thread-message.response.dto';
+import { PaginationRequestDto } from './dto/pagination.request';
+import { SortRequestDto } from './dto/sort.request';
 
 @Injectable()
 export class MessageService {
@@ -52,16 +54,16 @@ export class MessageService {
   }
 
   public async getThreads(
-    offset: number,
-    limit: number,
+    pagination?: PaginationRequestDto,
+    sort?: SortRequestDto,
   ): Promise<ThreadResponseDto[]> {
     const messages: MessageEntity[] = await this.messageRepository.find({
       where: {
         parentMessageId: IsNull(),
       },
-      take: limit,
-      skip: offset,
-      order: { createdAt: 'DESC' },
+      take: pagination?.limit || 25,
+      skip: pagination?.offset || 0,
+      order: { [sort?.column || 'createdAt']: sort?.order || 'desc' },
     });
 
     return messages.map((e) => ThreadResponseDto.fromEntity(e));

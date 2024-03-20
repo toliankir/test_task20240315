@@ -6,7 +6,7 @@ import { ThreadMessageEntity } from 'src/database/entity/thread-message.entity';
 @ObjectType()
 export class ThreadResponseDto {
   @ApiProperty({ example: '1' })
-  @Field(() => ID)
+  @Field()
   public readonly id: number;
 
   @ApiProperty({ example: 'John Doe' })
@@ -18,7 +18,7 @@ export class ThreadResponseDto {
   public readonly email: string;
 
   @ApiProperty({ example: 'www.site.com' })
-  @Field()
+  @Field({ nullable: true })
   public readonly homepage: string | null;
 
   @ApiProperty({ example: 'Some interistng text' })

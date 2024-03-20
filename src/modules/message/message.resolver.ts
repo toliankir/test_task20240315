@@ -1,4 +1,4 @@
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { MessageService } from './message.service';
 import { ThreadResponseDto } from './dto/thread.response.dto';
 import { ThreadMessageResponseDto } from './dto/thread-message.response.dto';
@@ -7,6 +7,7 @@ import { IdMessageDto } from './dto/id.message.dto';
 import { PaginationRequestDto } from './dto/pagination.request';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/gurad/jwt-auth.guard';
+import { SortRequestDto } from './dto/sort.request';
 
 @Resolver()
 export class MessageResolver {
@@ -15,18 +16,9 @@ export class MessageResolver {
   @Query(() => [ThreadResponseDto], { name: 'threads' })
   public getThreads(
     @Args('pagination', { nullable: true }) pagination?: PaginationRequestDto,
+    @Args('sort', { nullable: true }) sort?: SortRequestDto,
   ): Promise<ThreadResponseDto[]> {
-    return this.messageService.getThreads(
-      pagination?.offset || 0,
-      pagination?.limit || 25,
-    );
-  }
-
-  @Query(() => ThreadResponseDto, { name: 'thread' })
-  public getThread(
-    @Args('id', { type: () => ID }) id: number,
-  ): Promise<ThreadResponseDto> {
-    return this.messageService.getMessage(id);
+    return this.messageService.getThreads(pagination, sort);
   }
 
   @Query(() => [ThreadMessageResponseDto], { name: 'threadMessages' })

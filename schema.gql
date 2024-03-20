@@ -1,0 +1,53 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type IdMessageDto {
+  id: Float!
+}
+
+type Mutation {
+  saveMessage(message: SaveMessageRequestDto!): IdMessageDto!
+}
+
+input PaginationRequestDto {
+  limit: Float
+  offset: Float
+}
+
+type Query {
+  thread(id: ID!): ThreadResponseDto!
+  threadMessages(id: Float!, pagination: PaginationRequestDto): [ThreadMessageResponseDto!]!
+  threads(pagination: PaginationRequestDto): [ThreadResponseDto!]!
+}
+
+input SaveMessageRequestDto {
+  email: String!
+  homepage: String
+  name: String!
+  replayToId: Float
+  text: String!
+}
+
+type ThreadMessageResponseDto {
+  createdAt: String!
+  email: String!
+  files: [String!]!
+  homepage: String!
+  id: ID!
+  name: String!
+  parentId: Float!
+  path: [Float!]!
+  text: String!
+  threadId: Float!
+}
+
+type ThreadResponseDto {
+  createdAt: String!
+  email: String!
+  files: [String!]!
+  homepage: String!
+  id: ID!
+  name: String!
+  text: String!
+}

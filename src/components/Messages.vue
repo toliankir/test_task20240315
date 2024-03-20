@@ -2,13 +2,15 @@
 import { onMounted, reactive } from 'vue';
 import { AppStore } from '../store';
 import { useStore } from 'vuex';
-import { makeRequest } from '../helpers/make-request';
 import { wrapError } from '../helpers/wrap-error';
 import { useRoute } from 'vue-router';
 import { Message } from '../types/message';
+import { getGraphqlClient } from '../helpers/graphql';
+import gql from 'graphql-tag';
+import * as gqlBuilder from 'gql-query-builder';
+import { getDate } from '../helpers/get-date';
 
-
-const limit = 25;
+const limit = 5;
 
 const state = reactive<{
     errorMessage: string | null;
@@ -16,6 +18,7 @@ const state = reactive<{
     offset: number;
     name: string | null;
     text: string | null;
+    homepage: string | null;
     replyToId: number | null
 }>({
     errorMessage: null,
@@ -23,6 +26,7 @@ const state = reactive<{
     offset: 0,
     name: null,
     text: null,
+    homepage: null,
     replyToId: null,
 });
 
@@ -42,17 +46,32 @@ const fetchMessages = async (thradId: number, offset: number, limit: number) => 
         return;
     }
     try {
-        const result = await makeRequest<Message[]>({
-            path: `/message/thread/${thradId}/message`,
-            method: "GET",
-            token: store.state.token!,
-            query: {
-                offset,
-                limit,
-            }
-        });
 
-        state.messages = result;
+        try {
+            const { query, variables } = gqlBuilder.query({
+                operation: 'threadMessages',
+                fields: ["id", "name", "email", "text", "createdAt", "path"],
+                variables: {
+                    id: { value: thradId, type: "Float", required: true },
+                    pagination: {
+                        value: {
+                            offset,
+                            limit,
+                        },
+                        type: "PaginationRequestDto"
+                    }
+                }
+            });
+
+            const { data }
+                = await getGraphqlClient().query({ query: gql`${query}`, variables });
+
+            if (data.threadMessages.length > 0) {
+                state.messages = data.threadMessages;
+            }
+        } catch (e) {
+            state.errorMessage = wrapError(e);
+        }
     } catch (e) {
         state.errorMessage = wrapError(e);
     }
@@ -64,34 +83,42 @@ const getMessagePadding = (message: Message) => {
     };
 }
 
-const getDate = (message: Message) => {
-    return new Date(message.createdAt).toLocaleString();
-}
-
 const showReply = (message: Message) => {
     state.replyToId = message.id;
 }
 
 const reply = async (e: any) => {
-    e.preventDefault()
+    console.log(123);
+    e.preventDefault();
     state.errorMessage = null;
     if (!store.state.token) {
         state.errorMessage = "Login first"
         return;
     }
     try {
-        await makeRequest({
-            path: `/message`,
-            method: "POST",
-            token: store.state.token!,
-            data: {
-                name: state.name,
-                email: store.getters.getDataFromToken.email,
-                text: state.text,
-                replayToId: state.replyToId
+
+
+        const { query, variables } = gqlBuilder.mutation({
+            operation: 'saveMessage',
+            fields: ["id"],
+            variables: {
+                message: {
+                    value: {
+                        email: store.getters.getDataFromToken.email,
+                        homepage: state.homepage,
+                        name: state.name,
+                        replayToId: state.replyToId,
+                        text: state.text,
+                    },
+                    type: "SaveMessageRequestDto",
+                    required: true
+                }
             }
         });
+
+        await getGraphqlClient(store.state.token).mutate({ mutation: gql`${query}`, variables });
         await fetchMessages(parseInt(route.params.id.toString()), state.offset, limit);
+
         state.replyToId = null;
     } catch (e) {
         state.errorMessage = wrapError(e);
@@ -102,6 +129,20 @@ const cancelReply = (e: any) => {
     e.preventDefault();
     state.replyToId = null;
 }
+
+const next = () => {
+    if (state.messages.length === limit) {
+        state.offset = state.offset + limit;
+        fetchMessages(parseInt(route.params.id.toString()), state.offset, limit);
+    }
+}
+
+const prev = () => {
+    if (state.offset > 0) {
+        state.offset = state.offset - limit;
+        fetchMessages(parseInt(route.params.id.toString()), state.offset, limit)
+    }
+}
 </script>
 
 <template>
@@ -111,7 +152,7 @@ const cancelReply = (e: any) => {
             <div class="bg-gray-200 p-3 flex w-full rounded items-center">
                 <div class="w-1/5 flex items-center">
                     <span
-                        class="bg-gray-300 mr-3 rounded-full w-10 h-10 flex justify-center items-center font-bold uppercase border-4 border-white">{{
+                        class="bg-gray-300 mr-3 rounded-full w-10 h-10 flex justify-center items-center font-bold uppercase border-4 border-white text-sm">{{
             message.id }}</span>
                     <span class="font-bold">{{ message.name }}</span>
                 </div>
@@ -126,6 +167,10 @@ const cancelReply = (e: any) => {
             <div class="p-2">
                 {{ message.text }}
             </div>
+        </div>
+        <div class="flex">
+            <p @click="prev" class="text-blue-700 select-none font-bold mx-3 hover:cursor-pointer">Prev</p>
+            <p @click="next" class="text-blue-700 select-none font-bold mx-3 hover:cursor-pointer">Next</p>
         </div>
     </div>
     <div v-if="state.errorMessage" class="font-semibold text-red-600">
@@ -155,6 +200,13 @@ const cancelReply = (e: any) => {
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     placeholder="Text" required>
                     </textarea>
+            </div>
+
+            <div class="my-2">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Homepage</label>
+                <input type="text" v-model="state.homepage"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    placeholder="http://site.com" required />
             </div>
 
             <div class="text-center mt-5 mb-2 flex justify-around">

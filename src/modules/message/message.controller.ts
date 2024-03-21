@@ -15,6 +15,7 @@ import { PaginationRequestDto } from './dto/pagination.request';
 import { IdMessageDto } from './dto/id.message.dto';
 import { ThreadMessageResponseDto } from './dto/thread-message.response.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { SaveMessageResponseDto } from './dto/save-message.response.dto';
 
 @Controller('message')
 export class MessageController {
@@ -52,7 +53,7 @@ export class MessageController {
   @Post()
   public saveMessage(
     @Body() data: SaveMessageRequestDto,
-  ): Promise<IdMessageDto> {
+  ): Promise<SaveMessageResponseDto> {
     return this.messageService.saveMessage(data);
   }
 }

@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType } from '@nestjs/graphql';
 import { ApiProperty } from '@nestjs/swagger';
 import { MessageEntity } from 'src/database/entity/message.entity';
 import { ThreadMessageEntity } from 'src/database/entity/thread-message.entity';

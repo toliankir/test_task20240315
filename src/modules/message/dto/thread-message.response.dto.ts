@@ -14,7 +14,7 @@ export class ThreadMessageResponseDto extends ThreadResponseDto {
   public readonly path: number[];
 
   @ApiProperty({ example: '2', description: 'Parent message id' })
-  @Field()
+  @Field({ nullable: true })
   public readonly parentId: number | null;
 
   public static fromEntity(

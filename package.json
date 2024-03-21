@@ -9,12 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "apollo-cache-inmemory": "^1.6.6",
-    "apollo-client": "^2.6.10",
-    "apollo-link-http": "^1.5.17",
+    "@apollo/client": "^3.9.8",
     "gql-query-builder": "^3.8.0",
     "graphql": "^15.8.0",
     "graphql-tag": "^2.12.6",
+    "graphql-ws": "^5.15.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
     "vuex": "^4.1.0"

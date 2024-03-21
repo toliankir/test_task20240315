@@ -35,7 +35,7 @@ export const store = createStore<AppStore>({
                 token: string;
                 refreshToken: string;
             }>({
-                path: "/auth/login",
+                path: "auth/login",
                 method: "POST",
                 data: {
                     username: opts.email,
@@ -56,7 +56,7 @@ export const store = createStore<AppStore>({
                 token: string;
                 refreshToken: string;
             }>({
-                path: "/auth/refresh",
+                path: "auth/refresh",
                 method: "GET",
                 token: this.state.refreshToken
             });

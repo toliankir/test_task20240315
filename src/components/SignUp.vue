@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue';
+import { reactive } from 'vue';
 import { router } from '../router';
 import { makeRequest } from '../helpers/make-request';
 import { wrapError } from '../helpers/wrap-error';
@@ -22,14 +22,14 @@ async function startLoginFlow(e: any) {
         }
 
         await makeRequest({
-            path: "/auth/start-login",
+            path: "auth/start-login",
             method: "POST",
             data: {
                 email: state.email,
             }
         });
 
-        router.push('/sign-in');
+        router.push('sign-in');
     } catch (e) {
         state.errorMessage = wrapError(e);
     }

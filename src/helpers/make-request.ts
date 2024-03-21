@@ -8,7 +8,7 @@ export const makeRequest = async <T>(opts: {
     query?: { [key: string]: string | number }
 }): Promise<T> => {
 
-    const apiUrl = getApiUrl();
+    const apiUrl = getApiUrl(opts.path);
     const options: RequestInit = {
         method: opts.method,
         headers: {
@@ -35,7 +35,7 @@ export const makeRequest = async <T>(opts: {
         }
     }
 
-    const req = await fetch(`${apiUrl}${opts.path}${ searchParams ? `?${searchParams.toString()}` : ""}`, options);
+    const req = await fetch(apiUrl, options);
     if (req.status >= 300) {
         throw new Error(`${req.status}: ${req.statusText}`);
     }

@@ -8,6 +8,7 @@ import gql from 'graphql-tag';
 import * as gqlBuilder from 'gql-query-builder';
 import { getGraphqlClient } from '../helpers/graphql';
 import { getDate } from '../helpers/get-date';
+import Modal from './Modal.vue';
 
 type SortColumn = 'name' | 'email' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
@@ -21,38 +22,47 @@ const state = reactive<{
     offset: number;
     sortColumn: SortColumn;
     sortOrder: SortOrder;
+    showCreateThread: boolean;
 }>({
     errorMessage: null,
     threads: [],
     offset: 0,
     sortColumn: 'createdAt',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    showCreateThread: false,
 });
 
 onMounted(async () => {
-    fetchArticles()
+    fetchThreads();
+
+    getGraphqlClient().subscribe({
+        query: gql`subscription {
+                    messageAdd { id } }`
+    }).subscribe(
+        () => { 
+            if (state.offset === 0) {
+                fetchThreads();
+            }
+         },
+    )
 });
 
-const fetchArticles = async () => {
-    if (!store.state.token) {
-        state.errorMessage = "Login first"
-        return;
-    }
-
+const fetchThreads = async () => {
+    state.errorMessage = null;
     try {
         const { query, variables } = gqlBuilder.query({
             operation: 'threads',
             fields: ["id", "name", "email", "text", "createdAt"],
             variables: {
                 sort: {
-                        value: {
-                            column: state.sortColumn,
-                            order: state.sortOrder,
-                        },
-                        type: "SortRequestDto"
-                    }
+                    value: {
+                        column: state.sortColumn,
+                        order: state.sortOrder,
+                    },
+                    type: "SortRequestDto"
+                }
             }
-        })
+        });
         const { data }
             = await getGraphqlClient().query({ query: gql`${query}`, variables });
         state.threads = data.threads;
@@ -64,14 +74,14 @@ const fetchArticles = async () => {
 const fetchNext = () => {
     if (state.threads.length === limit) {
         state.offset = state.offset + limit;
-        fetchArticles()
+        fetchThreads()
     }
 }
 
 const fetchPrev = () => {
     if (state.offset > 0) {
         state.offset = state.offset - limit;
-        fetchArticles()
+        fetchThreads()
     }
 }
 
@@ -95,41 +105,67 @@ const setSort = (column: SortColumn) => {
         state.sortColumn = column;
         state.sortOrder = 'desc'
     }
-    fetchArticles()
+    fetchThreads()
+}
+
+const showCreateThread = () => {
+    state.errorMessage = null;
+    if (!store.state.token) {
+        state.errorMessage = "Login first";
+        return;
+    }
+    state.showCreateThread = true;
+}
+
+const cancelCreateThread = () => {
+    state.showCreateThread = false;
 }
 </script>
 
 <template>
+    <Modal v-if="state.showCreateThread" :reply-to="null" :cancel-reply="cancelCreateThread" />
+    <div v-if="state.errorMessage" class="font-semibold text-red-600">
+        <p>Error: {{ state.errorMessage }}</p>
+    </div>
     <div class="flex justify-center items-center flex-col relative">
-        <p class="font-bold text-blue-700 uppercase">Threads</p>
+        <div class="flex w-full">
+            <div class="w-1/3"></div>
+            <div class="w-1/3 text-center font-bold text-blue-700 uppercase">Threads</div>
+            <div class="w-1/3 text-right">
+                <button @click="showCreateThread"
+                    class="bg-blue-700 hover:bg-blue-800 text-white hover:cursor-pointer inline-block px-4 py-2 font-semibold rounded-lg">
+                    Create thread</button>
+            </div>
+        </div>
+
         <div class="flex w-full mt-3 select-none">
             <div @click="setSort('name')" class="w-1/5 pl-16 flex text-blue-700 hover:cursor-pointer">Name
-                <svg v-if="showSort('name', 'asc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
+                <svg v-if="showSort('name', 'asc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
                 </svg>
-                <svg v-if="showSort('name', 'desc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
+                <svg v-if="showSort('name', 'desc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
             </div>
             <div @click="setSort('email')" class="w-1/5 flex text-blue-700 hover:cursor-pointer">Email
-                <svg v-if="showSort('email', 'asc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
+                <svg v-if="showSort('email', 'asc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
                 </svg>
-                <svg v-if="showSort('email', 'desc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
+                <svg v-if="showSort('email', 'desc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                </svg>                
+                </svg>
             </div>
             <div @click="setSort('createdAt')" class="w-1/5 flex text-blue-700 hover:cursor-pointer">Created at
-                <svg v-if="showSort('createdAt', 'asc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
+                <svg v-if="showSort('createdAt', 'asc')" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
                 </svg>
-                <svg v-if="showSort('createdAt', 'desc')" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="w-6 h-6">
+                <svg v-if="showSort('createdAt', 'desc')" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
             </div>
@@ -140,7 +176,7 @@ const setSort = (column: SortColumn) => {
                     <div class="w-1/5 flex items-center">
                         <span
                             class="bg-gray-300 mr-3 rounded-full w-10 h-10 flex justify-center items-center font-bold uppercase border-4 border-white text-sm">{{
-            thread.id }}</span>
+        thread.id }}</span>
                         <span class="font-bold">{{ thread.name }}</span>
                     </div>
                     <span class="font-bold w-1/5">{{ thread.email }}</span>
@@ -149,9 +185,6 @@ const setSort = (column: SortColumn) => {
                 </div>
             </router-link>
         </div>
-    </div>
-    <div v-if="state.errorMessage" class="font-semibold text-red-600">
-        <p>Error: {{ state.errorMessage }}</p>
     </div>
 </template>
 

@@ -22,15 +22,17 @@ export class MessageResolver {
   }
 
   @Query(() => [ThreadMessageResponseDto], { name: 'threadMessages' })
-  public getThreadMessages(
+  public async getThreadMessages(
     @Args('id') id: number,
     @Args('pagination', { nullable: true }) pagination?: PaginationRequestDto,
   ): Promise<ThreadMessageResponseDto[]> {
-    return this.messageService.getThreadMessages(
+    const messages = await this.messageService.getThreadMessages(
       id,
       pagination?.offset || 0,
       pagination?.limit || 25,
     );
+
+    return messages;
   }
 
   @Mutation(() => SaveMessageResponseDto, { name: 'saveMessage' })

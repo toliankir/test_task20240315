@@ -44,7 +44,6 @@ export class MessageService {
       id: saved.id,
       path: threadMessage.path,
     };
-    console.log(result);
 
     this.pubSub.publish(MessageService.MESSAGE_ADDED, result);
     return result;
@@ -88,6 +87,7 @@ export class MessageService {
       where: {
         parentMessageId: IsNull(),
       },
+      relations: ['files'],
       take: pagination?.limit || 25,
       skip: pagination?.offset || 0,
       order: { [sort?.column || 'createdAt']: sort?.order || 'desc' },
@@ -102,6 +102,7 @@ export class MessageService {
         id: messageId,
         parentMessageId: IsNull(),
       },
+      relations: ['files'],
     });
 
     return ThreadResponseDto.fromEntity(message);

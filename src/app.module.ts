@@ -8,6 +8,9 @@ import { AuthModule } from './modules/auth/auth.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
+import { FileModule } from './modules/file/file.module';
+import { BullModule } from '@nestjs/bull';
+import { BullConfig } from './bull.config';
 
 @Module({
   imports: [
@@ -18,10 +21,15 @@ import { join } from 'path';
       autoSchemaFile: join(process.cwd(), '/schema.gql'),
       sortSchema: true,
       playground: true,
+      subscriptions: {
+        'graphql-ws': true,
+      },
     }),
+    BullModule.forRootAsync({ useClass: BullConfig }),
     InfoModule,
     MessageModule,
     AuthModule,
+    FileModule,
   ],
   controllers: [],
   providers: [],

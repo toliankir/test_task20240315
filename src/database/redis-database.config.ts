@@ -9,10 +9,12 @@ export class RedisDatabaseConfig implements CacheOptionsFactory {
 
   constructor(private readonly configService: ConfigService) {
     const connectionString = this.configService.get<string>(
-      'REDIS_CONNECTION_STRING',
+      'REDIS_CACHE_CONNECTION_STRING',
     );
     if (!connectionString) {
-      throw new Error('Miscofiguration REDIS_CONNECTION_STRING must be set');
+      throw new Error(
+        'Miscofiguration REDIS_CACHE_CONNECTION_STRING must be set',
+      );
     }
     this.connectionUrl = new URL(connectionString);
   }

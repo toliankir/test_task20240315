@@ -2,12 +2,19 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type IdMessageDto {
-  id: Float!
+type FileUploadedResponseDto {
+  filename: String!
+  messageId: Float!
+  mime: String!
+}
+
+type MessageFileResponseDto {
+  filename: String!
+  mime: String!
 }
 
 type Mutation {
-  saveMessage(message: SaveMessageRequestDto!): IdMessageDto!
+  saveMessage(message: SaveMessageRequestDto!): SaveMessageResponseDto!
 }
 
 input PaginationRequestDto {
@@ -28,19 +35,29 @@ input SaveMessageRequestDto {
   text: String!
 }
 
+type SaveMessageResponseDto {
+  id: Float!
+  path: [Float!]!
+}
+
 input SortRequestDto {
   column: String
   order: String
 }
 
+type Subscription {
+  fileUploaded: FileUploadedResponseDto!
+  messageAdd: SaveMessageResponseDto!
+}
+
 type ThreadMessageResponseDto {
   createdAt: String!
   email: String!
-  files: [String!]!
+  files: [MessageFileResponseDto!]!
   homepage: String
   id: Float!
   name: String!
-  parentId: Float!
+  parentId: Float
   path: [Float!]!
   text: String!
   threadId: Float!
@@ -49,7 +66,7 @@ type ThreadMessageResponseDto {
 type ThreadResponseDto {
   createdAt: String!
   email: String!
-  files: [String!]!
+  files: [MessageFileResponseDto!]!
   homepage: String
   id: Float!
   name: String!

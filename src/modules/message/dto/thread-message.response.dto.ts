@@ -1,10 +1,38 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ThreadMessageEntity } from '../../../database/entity/thread-message.entity';
-import { ThreadResponseDto } from './thread.response.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
+import { MessageFileResponseDto } from './message-file.response.dto';
 
 @ObjectType()
-export class ThreadMessageResponseDto extends ThreadResponseDto {
+export class ThreadMessageResponseDto {
+  @ApiProperty({ example: '1' })
+  @Field()
+  public readonly id: number;
+
+  @ApiProperty({ example: 'John Doe' })
+  @Field()
+  public readonly name: string;
+
+  @ApiProperty({ example: 'test@mail.com' })
+  @Field()
+  public readonly email: string;
+
+  @ApiProperty({ example: 'www.site.com' })
+  @Field({ nullable: true })
+  public readonly homepage: string | null;
+
+  @ApiProperty({ example: 'Some interistng text' })
+  @Field()
+  public readonly text: string;
+
+  @ApiProperty()
+  @Field(() => [MessageFileResponseDto])
+  public readonly files: MessageFileResponseDto[];
+
+  @ApiProperty({ example: 'Some interistng text' })
+  @Field()
+  public readonly createdAt: string;
+
   @ApiProperty({ example: '1' })
   @Field()
   public readonly threadId: number;
@@ -27,7 +55,7 @@ export class ThreadMessageResponseDto extends ThreadResponseDto {
       homepage: entity.homepage || null,
       text: entity.text,
       parentId: entity.parentMessageId || null,
-      files: [],
+      files: entity.files || [],
       threadId: entity.threadId,
       path: entity.path.split(',').map((e) => parseInt(e)) || [],
       createdAt: entity.createdAt.toString(),

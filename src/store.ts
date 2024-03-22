@@ -1,9 +1,11 @@
 import { createStore } from "vuex";
 import { makeRequest } from "./helpers/make-request";
 import { parseToken } from "./helpers/parse-token";
+import { wrapError } from "./helpers/wrap-error";
 export interface AppStore {
     token: string | null;
-    refreshToken: string | null
+    refreshToken: string | null;
+    error: string | null;
 }
 
 export const store = createStore<AppStore>({
@@ -11,19 +13,23 @@ export const store = createStore<AppStore>({
         return {
             token: null,
             refreshToken: null,
+            error: null,
         }
     },
     mutations: {
         initialiseStore(state) {
-			if(localStorage.getItem('store')) {
-				this.replaceState(
-					Object.assign(state, JSON.parse(localStorage.getItem('store')!))
-				);
-			}
-		},
+            if (localStorage.getItem('store')) {
+                this.replaceState(
+                    Object.assign(state, JSON.parse(localStorage.getItem('store')!))
+                );
+            }
+        },
         setTokens(state: AppStore, opts: { token: string, refreshToken: string }) {
             state.token = opts.token;
             state.refreshToken = opts.refreshToken;
+        },
+        setError(state: AppStore, error: string | null) {
+            state.error = error;
         }
     },
     actions: {
@@ -31,22 +37,28 @@ export const store = createStore<AppStore>({
             email: string;
             password: string;
         }): Promise<void> {
-            const result = await makeRequest<{
-                token: string;
-                refreshToken: string;
-            }>({
-                path: "auth/login",
-                method: "POST",
-                data: {
-                    username: opts.email,
-                    password: opts.password
-                }
-            });
-    
-            context.commit('setTokens', {
-                token: result.token,
-                refreshToken: result.refreshToken
-            });
+            try {
+                context.commit('setError', null);
+
+                const result = await makeRequest<{
+                    token: string;
+                    refreshToken: string;
+                }>({
+                    path: "auth/login",
+                    method: "POST",
+                    data: {
+                        username: opts.email,
+                        password: opts.password
+                    }
+                });
+
+                context.commit('setTokens', {
+                    token: result.token,
+                    refreshToken: result.refreshToken
+                });
+            } catch (e) {
+                context.commit('setError', wrapError(e));
+            }
         },
         async refreshToken(context): Promise<void> {
             if (!this.state.refreshToken) {
@@ -60,7 +72,7 @@ export const store = createStore<AppStore>({
                 method: "GET",
                 token: this.state.refreshToken
             });
-    
+
             context.commit('setTokens', {
                 token: result.token,
                 refreshToken: this.state.refreshToken
@@ -83,6 +95,6 @@ export const store = createStore<AppStore>({
     }
 });
 
-store.subscribe((mutation, state) => {
-	localStorage.setItem('store', JSON.stringify(state));
+store.subscribe((_mutation, state) => {
+    localStorage.setItem('store', JSON.stringify(state));
 });

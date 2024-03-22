@@ -8,13 +8,14 @@ import gql from 'graphql-tag';
 import * as gqlBuilder from 'gql-query-builder';
 import { getGraphqlClient } from '../helpers/graphql';
 import { getDate } from '../helpers/get-date';
-import Modal from './Modal.vue';
+import MessageModal from './MessageModal.vue';
 
 type SortColumn = 'name' | 'email' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
-const limit = 10;
+const limit = 5;
 const store = useStore<AppStore>();
+const graphClient = getGraphqlClient();
 
 const state = reactive<{
     errorMessage: string | null;
@@ -34,16 +35,15 @@ const state = reactive<{
 
 onMounted(async () => {
     fetchThreads();
-
-    getGraphqlClient().subscribe({
+    graphClient.subscribe({
         query: gql`subscription {
                     messageAdd { id } }`
     }).subscribe(
-        () => { 
+        () => {
             if (state.offset === 0) {
                 fetchThreads();
             }
-         },
+        },
     )
 });
 
@@ -60,28 +60,35 @@ const fetchThreads = async () => {
                         order: state.sortOrder,
                     },
                     type: "SortRequestDto"
+                },
+                pagination: {
+                    value: {
+                        offset: state.offset,
+                        limit,
+                    },
+                    type: "PaginationRequestDto",
                 }
             }
         });
         const { data }
-            = await getGraphqlClient().query({ query: gql`${query}`, variables });
+            = await graphClient.query({ query: gql`${query}`, variables, fetchPolicy: 'network-only' });
         state.threads = data.threads;
     } catch (e) {
         state.errorMessage = wrapError(e);
     }
 }
 
-const fetchNext = () => {
+const next = () => {
     if (state.threads.length === limit) {
         state.offset = state.offset + limit;
-        fetchThreads()
+        fetchThreads();
     }
 }
 
-const fetchPrev = () => {
+const prev = () => {
     if (state.offset > 0) {
         state.offset = state.offset - limit;
-        fetchThreads()
+        fetchThreads();
     }
 }
 
@@ -123,7 +130,7 @@ const cancelCreateThread = () => {
 </script>
 
 <template>
-    <Modal v-if="state.showCreateThread" :reply-to="null" :cancel-reply="cancelCreateThread" />
+    <MessageModal v-if="state.showCreateThread" :reply-to="null" :cancel-reply="cancelCreateThread" />
     <div v-if="state.errorMessage" class="font-semibold text-red-600">
         <p>Error: {{ state.errorMessage }}</p>
     </div>
@@ -185,7 +192,13 @@ const cancelCreateThread = () => {
                 </div>
             </router-link>
         </div>
+        <div class="flex">
+            <p @click="prev" class="text-blue-700 select-none font-bold mx-3 hover:cursor-pointer">Prev</p>
+            <p @click="next" class="text-blue-700 select-none font-bold mx-3 hover:cursor-pointer">Next</p>
+        </div>
     </div>
+
 </template>
 
 <style scoped></style>
+./MessageModal.vue

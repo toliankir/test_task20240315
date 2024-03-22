@@ -26,10 +26,14 @@ async function login(e: any) {
             return;
         }
 
-        store.dispatch('signIn', {
+        await store.dispatch('signIn', {
             email: state.email,
             password: state.password
-        })
+        });
+
+        if (store.state.error) {
+            throw new Error (store.state.error);
+        }
 
         router.push('/current-user');
     } catch (e) {
@@ -40,8 +44,9 @@ async function login(e: any) {
 
 <template>
     <div class="flex justify-center items-center flex-col">
+        {{ store.state.error }}
         <p class="font-bold text-blue-700 uppercase">Sign in</p>
-        <p class="text-blue-700">One time password will be send to your email, use it for login. (In develop version the password is 1234)</p>
+        <p class="text-blue-700">In developed version password will not send, use default password - 1234</p>
         <form class="w-1/2 md:w-1/3">
             <div class="my-2">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>

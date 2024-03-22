@@ -9,10 +9,13 @@ import { getGraphqlClient } from '../helpers/graphql';
 import gql from 'graphql-tag';
 import * as gqlBuilder from 'gql-query-builder';
 import { getDate } from '../helpers/get-date';
-import Modal from './Modal.vue';
+import MessageModal from './MessageModal.vue';
+import Upload from './Upload.vue';
+import FilePreview from './FilePreview.vue';
 
 const route = useRoute();
 const store = useStore<AppStore>();
+const graphClient = getGraphqlClient();
 
 const limit = 25;
 const threadId = parseInt(route.params.id.toString());
@@ -29,10 +32,10 @@ const state = reactive<{
     replyToId: null,
 });
 
-onMounted(() => {
-    fetchMessages(threadId, 0, limit)
+onMounted(async () => {
+    await fetchMessages(threadId, 0, limit);
 
-    getGraphqlClient().subscribe({
+    graphClient.subscribe({
         query: gql`subscription {
                     messageAdd { 
                         id
@@ -45,11 +48,27 @@ onMounted(() => {
                 const pathStr = path.slice(0, path.length - 1).join();
                 const sameMessage = state.messages.find(e => e.path.join('').indexOf(pathStr) === 0);
                 if (sameMessage) {
-                    fetchMessages(threadId, state.offset, limit)
+                    fetchMessages(threadId, state.offset, limit);
                 }
             }
         },
-    )
+    );
+
+    graphClient.subscribe({
+        query: gql`subscription {
+                    fileUploaded { 
+                        messageId
+                        filename
+                        mime
+                    } }`
+    }).subscribe(
+        ({ data }) => {
+            const updatedMessage = state.messages.find(e => e.id === data.fileUploaded.messageId);
+            if (updatedMessage && !updatedMessage.files.includes(data.fileUploaded.filename)) {
+                fetchMessages(threadId, state.offset, limit);
+            }
+        },
+    );
 });
 
 const fetchMessages = async (thradId: number, offset: number, limit: number) => {
@@ -57,7 +76,7 @@ const fetchMessages = async (thradId: number, offset: number, limit: number) => 
     try {
         const { query, variables } = gqlBuilder.query({
             operation: 'threadMessages',
-            fields: ["id", "name", "email", "text", "createdAt", "path"],
+            fields: ["id", "name", "email", "text", "createdAt", "path", { files: ["filename", "mime"] }],
             variables: {
                 id: { value: thradId, type: "Float", required: true },
                 pagination: {
@@ -70,11 +89,11 @@ const fetchMessages = async (thradId: number, offset: number, limit: number) => 
             }
         });
 
-        const { data }
-            = await getGraphqlClient().query({ query: gql`${query}`, variables });
+        const result
+            = await graphClient.query({ query: gql`${query}`, variables, fetchPolicy: 'network-only' });
 
-        if (data.threadMessages.length > 0) {
-            state.messages = data.threadMessages;
+        if (result.data.threadMessages.length > 0) {
+            state.messages = result.data.threadMessages;
         }
     } catch (e) {
         state.errorMessage = wrapError(e);
@@ -115,7 +134,7 @@ const prev = () => {
 </script>
 
 <template>
-    <Modal v-if="state.replyToId" :reply-to="state.replyToId" :cancel-reply="cancelReply" />
+    <MessageModal v-if="state.replyToId" :reply-to="state.replyToId" :cancel-reply="cancelReply" />
     <div v-if="state.errorMessage" class="font-semibold text-red-600">
         <p>Error: {{ state.errorMessage }}</p>
     </div>
@@ -131,7 +150,9 @@ const prev = () => {
                 </div>
                 <span class="font-bold w-1/5">{{ message.email }}</span>
                 <span class="text-sm w-2/5">{{ getDate(message) }}</span>
-                <div class="text-sm w-1/5 text-right">
+
+                <div class="text-sm w-1/5 text-right flex items-center justify-end">
+                    <Upload :message-id="message.id" />
                     <button @click="showReply(message)"
                         class="bg-blue-700 hover:bg-blue-800 text-white hover:cursor-pointer inline-block px-4 py-2 font-semibold rounded-lg">
                         Replay</button>
@@ -139,6 +160,10 @@ const prev = () => {
             </div>
             <div class="p-2">
                 {{ message.text }}
+            </div>
+            <div v-if="message.files.length > 0" class="p-2 bg-blue-100 rounded">
+                <p class="text-sm">Attached files:</p>
+                <FilePreview v-for="file of message.files" :file="file" :message-id="message.id" />
             </div>
         </div>
         <div class="flex">

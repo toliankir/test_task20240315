@@ -14,6 +14,12 @@ docker run \
 --env JWT_TTL_MINUTES=60 \
 --env JWT_REFRESH_TTL_MINUTES=43200 \
 --env RUN_MIGRATION=yes \
---env RUN_SEED=yes \
+--env REDIS_CACHE_CONNECTION_STRING=redis://:devel@redis:6379/0 \
+--env REDIS_CACHE_TTL_MIN=15 \
+--env REDIS_BULL_CONNECTION_STRING=redis://:devel@redis:6379/1 \
+--env TINIFY_API_KEY=TINIFY_API_KEY_PLACEHOLDER \
 test_task20240315
 ```
+
+
+

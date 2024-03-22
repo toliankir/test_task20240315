@@ -74,7 +74,7 @@ export class FileService {
   private async uploadFileProcess(job: Job<UploadFileJobData>) {
     try {
       try {
-        this.messageService.getMessage(job.data.messageId);
+        await this.messageService.getMessage(job.data.messageId);
       } catch (e) {
         this.logger.warn(`Message ${job.data.messageId} does not exist`);
         throw e;

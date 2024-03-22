@@ -100,7 +100,6 @@ export class MessageService {
     const message: MessageEntity = await this.messageRepository.findOneOrFail({
       where: {
         id: messageId,
-        parentMessageId: IsNull(),
       },
       relations: ['files'],
     });

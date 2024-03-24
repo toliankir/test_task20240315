@@ -7,7 +7,7 @@ import Main from './components/Main.vue';
 import Threads from './components/Threads.vue';
 
 export const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         { name: "main", path: '/', component: Main },
         { name: "signUp", path: '/sign-up', component: SignUp },

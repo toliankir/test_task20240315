@@ -4,5 +4,5 @@ import vue from '@vitejs/plugin-vue'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  base: "test_task20240315"
+  base: process.env.ROUTE_BASE || ""
 })

@@ -52,7 +52,9 @@ export class FileService {
       mime: file.mime,
       data: file.data.toString('base64'),
     };
-    await this.fileUploadQueue.add(jobData);
+    await this.fileUploadQueue.add(jobData, {
+      jobId: `${data.messageId}:${file.filename}`,
+    });
   }
 
   public async getFile(data: GetFileRequestDto): Promise<UploadFile> {

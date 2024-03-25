@@ -7,6 +7,8 @@ import {
   IsString,
   IsUrl,
 } from 'class-validator';
+import { EscapeHtml } from '../decorators/escape-html.decorator';
+import { Transform } from 'class-transformer';
 
 @InputType()
 export class SaveMessageRequestDto {
@@ -27,6 +29,7 @@ export class SaveMessageRequestDto {
   public readonly homepage?: string;
 
   @ApiProperty({ example: 'Some interistng text' })
+  @EscapeHtml()
   @IsString()
   @Field()
   public readonly text: string;

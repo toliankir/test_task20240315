@@ -11,6 +11,8 @@ import { join } from 'path';
 import { FileModule } from './modules/file/file.module';
 import { BullModule } from '@nestjs/bull';
 import { BullConfig } from './bull.config';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
 
 @Module({
   imports: [
@@ -26,6 +28,10 @@ import { BullConfig } from './bull.config';
       },
     }),
     BullModule.forRootAsync({ useClass: BullConfig }),
+    BullBoardModule.forRoot({
+      route: '/queues',
+      adapter: ExpressAdapter,
+    }),
     InfoModule,
     MessageModule,
     AuthModule,

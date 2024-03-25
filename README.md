@@ -32,7 +32,7 @@ docker-compose up --build
 ```
 * Frontend application http://127.0.0.1:3180
 * Backend swagger http://127.0.0.1:3100/api-doc
-
+* Backend bull dashboard http://127.0.0.1:3100/queues
 
 ### Add new orphan branch
 

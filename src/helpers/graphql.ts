@@ -10,6 +10,7 @@ export const getGraphqlClient = (token?: string) => {
       url: `${getApiUrl("graphql", {
         protocol: "ws"
       })}`,
+      retryAttempts: 50,
     })
   );
 

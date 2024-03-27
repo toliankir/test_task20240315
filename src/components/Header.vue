@@ -16,6 +16,7 @@ const checkToken = () => {
     state.tokenExpired = new Date() > store.getters.getDataFromToken.exp;
   }
 }
+
 onMounted(() => {
   checkToken();
 })

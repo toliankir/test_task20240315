@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { onMounted, reactive } from 'vue';
 import { useStore } from 'vuex';
 import { AppStore } from '../store';
 import * as gqlBuilder from 'gql-query-builder';
@@ -13,22 +13,39 @@ const state = reactive<{
     name: string | null;
     text: string | null;
     homepage: string | null;
+    htmlData: string | null;
 }>({
     errorMessage: null,
     name: null,
     text: null,
     homepage: null,
+    htmlData: null,
 });
+
+
+onMounted(() => {
+    (window as any).mtcaptcha.renderUI();
+})
 
 const { replyTo, cancelReply } = defineProps(["replyTo", "cancelReply"]);
 
-const reply = async () => {
+const createMessage = async () => {
     state.errorMessage = null;
     if (!store.state.token) {
         state.errorMessage = "Login first"
         return;
     }
     try {
+        const token = (window as any).mtcaptcha.getVerifiedToken();
+        if (!token) {
+            state.errorMessage = `Fill captcha`;
+            return;
+        }
+        if (!state.name || !state.text) {
+            state.errorMessage = `Fill all required data`;
+            return;
+        }
+
         const { query, variables } = gqlBuilder.mutation({
             operation: 'saveMessage',
             fields: ["id"],
@@ -40,6 +57,7 @@ const reply = async () => {
                         name: state.name,
                         replayToId: replyTo,
                         text: state.text,
+                        captchaToken: token
                     },
                     type: "SaveMessageRequestDto",
                     required: true
@@ -89,12 +107,14 @@ const reply = async () => {
                     placeholder="http://site.com" required />
             </div>
 
+            <div class="mtcaptcha"></div>
+
             <div class="text-center mt-5 mb-2 flex justify-around">
                 <button @click="cancelReply"
                     class="bg-blue-700 hover:bg-blue-800 text-white hover:cursor-pointer inline-block px-5 py-2.5 font-semibold rounded-lg">
                     Cancel</button>
 
-                <button @click="reply"
+                <button @click="createMessage"
                     class="bg-blue-700 hover:bg-blue-800 text-white hover:cursor-pointer inline-block px-5 py-2.5 font-semibold rounded-lg">
                     {{ replyTo ? "Replay" : "Create" }}
                 </button>

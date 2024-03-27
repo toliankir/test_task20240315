@@ -158,9 +158,7 @@ const prev = () => {
                         Replay</button>
                 </div>
             </div>
-            <div class="p-2">
-                {{ message.text }}
-            </div>
+            <div class="p-2" v-html="message.text"></div>
             <div v-if="message.files.length > 0" class="p-2 bg-blue-100 rounded">
                 <p class="text-sm">Attached files:</p>
                 <FilePreview v-for="file of message.files" :file="file" :message-id="message.id" />

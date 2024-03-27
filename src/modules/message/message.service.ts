@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { SaveMessageRequestDto } from './dto/save-message.request.dto';
 import { MessageEntity } from 'src/database/entity/message.entity';
 import { DeepPartial, IsNull, Repository } from 'typeorm';
@@ -10,24 +10,43 @@ import { PaginationRequestDto } from './dto/pagination.request';
 import { SortRequestDto } from './dto/sort.request';
 import { SaveMessageResponseDto } from './dto/save-message.response.dto';
 import { PubSub } from 'graphql-subscriptions';
-
+import { MTCaptcha } from 'mtcaptcha';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class MessageService {
+  private readonly logger = new Logger(MessageService.name);
   public static MESSAGE_ADDED = 'MESSAGE_ADDED';
   public readonly pubSub: PubSub;
-
+  private readonly mtCaptchPrivateKey: string;
   constructor(
     @InjectRepository(MessageEntity)
     private readonly messageRepository: Repository<MessageEntity>,
     @InjectRepository(ThreadMessageEntity)
     private readonly messageThreeRepository: Repository<ThreadMessageEntity>,
+    readonly configService: ConfigService,
   ) {
     this.pubSub = new PubSub();
+
+    const mtCaptchPrivateKey = configService.get<string>(
+      'MTCAPTCHA_PRIVATE_KEY',
+    );
+    if (!mtCaptchPrivateKey) {
+      const errorMessage = 'MTCAPTCHA_PRIVATE_KEY must be set.';
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    this.mtCaptchPrivateKey = mtCaptchPrivateKey;
   }
 
   public async saveMessage(
     data: SaveMessageRequestDto,
   ): Promise<SaveMessageResponseDto> {
+    const verifyCaptcha = await this.verifyCaptcha(data.captchaToken);
+    if (!verifyCaptcha.success) {
+      throw new BadRequestException('Incorrect captcha');
+    }
+
     const newMessageEntity: DeepPartial<MessageEntity> = {
       name: data.name,
       email: data.email,
@@ -105,5 +124,15 @@ export class MessageService {
     });
 
     return ThreadResponseDto.fromEntity(message);
+  }
+
+  private verifyCaptcha(token: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    return new Promise((res) => {
+      const captcha = new MTCaptcha(this.mtCaptchPrivateKey, token);
+      captcha.verify((data) => res(data));
+    });
   }
 }

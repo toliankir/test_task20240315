@@ -39,4 +39,9 @@ export class SaveMessageRequestDto {
   @IsOptional()
   @Field({ nullable: true })
   public readonly replayToId?: number;
+
+  @ApiProperty({ description: 'MT captcha token' })
+  @IsString()
+  @Field()
+  public captchaToken: string;
 }

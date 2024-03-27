@@ -28,6 +28,7 @@ type Query {
 }
 
 input SaveMessageRequestDto {
+  captchaToken: String!
   email: String!
   homepage: String
   name: String!

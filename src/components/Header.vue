@@ -11,9 +11,13 @@ const state = reactive<{
   tokenExpired: false,
 });
 
-const checkToken = () => {
+const checkToken = async () => {
   if (store.state.token) {
     state.tokenExpired = new Date() > store.getters.getDataFromToken.exp;
+
+    if (state.tokenExpired) {
+      await store.dispatch('refreshToken');
+    }
   }
 }
 
